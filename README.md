@@ -1,5 +1,7 @@
 # GPU Guard
 
+![GPU Guard](assets/gpu_guard_promo_poster_v1.png)
+
 輕量、零安裝依賴（純 Python 標準庫）的 GPU 滿載監控 + 一鍵釋放小工具。專為 Windows + NVIDIA 消費級顯卡（GeForce）設計。
 
 ## 起源 (Why this exists)
