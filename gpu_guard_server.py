@@ -72,6 +72,8 @@ def collect_once():
                 "power": float(p[5]), "powerlimit": float(p[6]),
                 "clock": int(float(p[7])), "fan": int(float(p[8])) if p[8] not in ("[N/A]", "N/A") else None,
             }
+    except FileNotFoundError:
+        err = "NO_NVIDIA_SMI"  # 這台電腦找不到 nvidia-smi，可能不是 NVIDIA 顯卡或驅動未安裝，本工具目前僅支援 NVIDIA GeForce/Quadro
     except Exception as e:
         err = "nvidia-smi失敗: " + str(e)
 
