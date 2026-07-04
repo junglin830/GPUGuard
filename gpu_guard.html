@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8">
-<title>GPU Guard v1.3</title>
+<title>GPU Guard v1.6</title>
 <style>
  /* 鐵規則:不要綠色;頁面得獎級;老闆老花→大字。配色/質感沿用公司視覺標竿(靈感庫前端)同一套語言 */
  :root{--bg1:#070d1f;--bg2:#0b1530;--ink:#eef4ff;--mut:#a9bde0;
@@ -23,7 +23,11 @@
    box-shadow:0 0 20px rgba(95,224,255,.55)}
  h1{font-size:1.9rem;font-weight:900;letter-spacing:.5px}
  .sub{color:var(--mut);font-size:.95rem;margin-top:2px}
- .ver{color:var(--mut);font-size:.8rem;margin-left:auto;text-align:right}
+ .verWrap{margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+ .ver{color:var(--mut);font-size:.8rem;text-align:right}
+ .langBtn{background:var(--card2);border:1px solid var(--bd);border-radius:999px;
+   padding:6px 14px;font-size:.82rem;font-weight:800;color:var(--cyan);cursor:pointer;transition:.15s}
+ .langBtn:hover{border-color:var(--cyan);box-shadow:0 0 10px rgba(95,224,255,.35)}
 
  .alertBar{display:none;align-items:center;gap:10px;border-radius:16px;padding:14px 18px;
    margin-bottom:16px;font-weight:800;font-size:1rem;border:2px solid var(--gold);
@@ -63,6 +67,13 @@
  .sectionTitle{font-size:.92rem;color:var(--mut);font-weight:800;margin-bottom:12px;
    text-transform:uppercase;letter-spacing:1px}
 
+ .legend{display:flex;flex-wrap:wrap;gap:14px;margin-bottom:14px;font-size:.86rem;color:var(--mut)}
+ .legend span{display:inline-flex;align-items:center;gap:6px;font-weight:700}
+ .legend i{width:14px;height:14px;border-radius:4px;display:inline-block;box-shadow:0 0 8px currentColor}
+ .legend i.b{background:var(--cyan);color:var(--cyan)}
+ .legend i.g{background:var(--gold);color:var(--gold)}
+ .legend i.r{background:var(--rose);color:var(--rose)}
+
  .item{position:relative;display:flex;justify-content:space-between;align-items:center;gap:14px;
    background:var(--card2);border:1px solid var(--bd);border-radius:16px;
    padding:13px 16px 13px 20px;margin-bottom:10px;transition:.16s}
@@ -91,8 +102,11 @@
 <div class="wrap">
   <div class="hd">
     <div class="orb"></div>
-    <div><h1>GPU Guard</h1><div class="sub">GPU滿載即時監控 ‧ 一鍵釋放VRAM ‧ 不用重開機</div></div>
-    <div class="ver">v1.3<br>2026-07-04</div>
+    <div><h1>GPU Guard</h1><div class="sub" id="subtitle">GPU滿載即時監控 ‧ 一鍵釋放VRAM ‧ 不用重開機</div></div>
+    <div class="verWrap">
+      <button class="langBtn" id="langBtn" onclick="toggleLang()">EN</button>
+      <div class="ver">v1.6<br>2026-07-04</div>
+    </div>
   </div>
 
   <div class="alertBar" id="alertBar"></div>
@@ -100,26 +114,31 @@
   <div class="card">
     <div class="row"><b id="gpuName">讀取中…</b><span class="ts" id="ts">--</span></div>
 
-    <div class="row"><b>VRAM</b><span class="val" id="vramText">-- / -- MB</span><span class="rl">紅線90% / 警戒75%</span></div>
+    <div class="row"><b id="lblVram">VRAM</b><span class="val" id="vramText">-- / -- GB</span><span class="rl" id="rlVram">紅線90% / 警戒75%</span></div>
     <div class="barTrack"><div class="barFill" id="vramBar" style="width:0%"></div><div class="redlineMark" id="vramRL"></div></div>
 
-    <div class="row"><b>使用率</b><span class="val" id="utilText">--%</span><span class="rl">紅線98% / 警戒85%</span></div>
+    <div class="row"><b id="lblUtil">使用率</b><span class="val" id="utilText">--%</span><span class="rl" id="rlUtil">紅線98% / 警戒85%</span></div>
     <div class="barTrack"><div class="barFill" id="utilBar" style="width:0%"></div><div class="redlineMark" id="utilRL"></div></div>
 
-    <div class="row"><b>功耗</b><span class="val" id="powerText">-- / -- W</span><span class="rl">紅線95% / 警戒85%</span></div>
+    <div class="row"><b id="lblPower">功耗</b><span class="val" id="powerText">-- / -- W</span><span class="rl" id="rlPower">紅線95% / 警戒85%</span></div>
     <div class="barTrack"><div class="barFill" id="powerBar" style="width:0%"></div><div class="redlineMark" id="powerRL"></div></div>
 
     <div class="grid4">
-      <div class="stat" id="tempStat"><div class="lb">溫度(紅線85°C)</div><div class="vl" id="tempVal">--°C</div></div>
-      <div class="stat"><div class="lb">核心時脈</div><div class="vl" id="clockVal">--</div></div>
-      <div class="stat"><div class="lb">風扇</div><div class="vl" id="fanVal">--%</div></div>
-      <div class="stat"><div class="lb">佔用程式數</div><div class="vl" id="procCount">--</div></div>
+      <div class="stat" id="tempStat"><div class="lb" id="lblTemp">溫度(紅線85°C)</div><div class="vl" id="tempVal">--°C</div></div>
+      <div class="stat"><div class="lb" id="lblClock">核心時脈</div><div class="vl" id="clockVal">--</div></div>
+      <div class="stat"><div class="lb" id="lblFan">風扇</div><div class="vl" id="fanVal">--%</div></div>
+      <div class="stat"><div class="lb" id="lblProcCount">佔用程式數</div><div class="vl" id="procCount">--</div></div>
     </div>
-    <div class="redlineNote">紅線標準：VRAM 90%／使用率 98%／溫度 85°C／功耗 95%上限，任一項超過紅線會跳警示條+聲音提醒；75-90%區間視為「快臨界」預警。（依實測RTX 5060Ti行為與消費級顯卡通用熱降頻門檻設定，可依機器調整）</div>
+    <div class="redlineNote" id="redlineNote"></div>
   </div>
 
   <div class="card">
-    <div class="sectionTitle">佔用VRAM排行 ‧ 紅框=主要嫌疑(≥25%) ‧ 金框=次要留意(≥10%)</div>
+    <div class="sectionTitle" id="sectionTitle">佔用VRAM排行(即時更新，每2秒)</div>
+    <div class="legend">
+      <span><i class="b"></i><span id="legB">藍框＝正常監控中(VRAM佔比低，安全)</span></span>
+      <span><i class="g"></i><span id="legG">金框＝次要留意(VRAM佔比10-25%)</span></span>
+      <span><i class="r"></i><span id="legR">紅框＝主要嫌疑(VRAM佔比≥25%，最可能是卡機元兇)</span></span>
+    </div>
     <div id="procList"></div>
     <div class="msg" id="msg"></div>
   </div>
@@ -128,34 +147,143 @@
 <script>
 const API = "http://localhost:8091";
 
-// ===== 常見程式說明(2026-07-04老闆指示：每個程式要有簡單說明,方便非技術使用者看懂在殺什麼) =====
-// 開源後歡迎PR擴充這份對照表，key一律小寫、對應nvidia-smi/工作管理員的process name(不含.exe)
-const PROC_DESC = {
-  "dwm": "Windows桌面特效管理員(系統核心，勿隨意結束)",
-  "explorer": "Windows檔案總管/桌面殼層(系統核心，勿隨意結束)",
-  "csrss": "Windows系統子程序(系統核心，本工具禁止結束)",
-  "chrome": "Google Chrome瀏覽器",
-  "msedge": "Microsoft Edge瀏覽器",
-  "msedgewebview2": "Edge內嵌網頁元件(常見於其他App內建的網頁畫面)",
-  "pythonw": "Python背景程式(常見於ComfyUI/本地AI繪圖或推論工具，最常是VRAM大戶)",
-  "python": "Python程式",
-  "battle.net": "暴雪戰網遊戲平台",
-  "codex": "OpenAI Codex 桌面應用",
-  "claude": "Claude 桌面應用",
-  "doubao": "豆包(字節跳動AI助理)桌面應用",
-  "line": "LINE 通訊軟體",
-  "linecall": "LINE 通話元件",
-  "photos": "Windows 相片檢視器",
-  "nvidia overlay": "NVIDIA App 內建疊加介面(遊戲內效能/錄影功能)",
-  "shellexperiencehost": "Windows 系統殼層元件",
-  "searchhost": "Windows 搜尋功能元件",
-  "startmenuexperiencehost": "Windows 開始選單元件",
-  "textinputhost": "Windows 輸入法/文字輸入元件",
-  "edgegameassist": "Edge 瀏覽器遊戲助理疊加",
-  "qqliveservice": "QQ直播/影音背景服務",
+// ===== 中英雙語設定(2026-07-04老闆指示：中英雙語，預設中文) =====
+let LANG = localStorage.getItem("gg_lang") || "zh";
+
+const I18N = {
+  zh: {
+    subtitle: "GPU滿載即時監控 ‧ 一鍵釋放VRAM ‧ 不用重開機",
+    vram: "VRAM", util: "使用率", power: "功耗",
+    temp: "溫度(紅線85°C)", clock: "核心時脈", fan: "風扇", procCount: "佔用程式數",
+    rlVram: "紅線90% / 警戒75%", rlUtil: "紅線98% / 警戒85%", rlPower: "紅線95% / 警戒85%",
+    redlineNote: "紅線標準：VRAM 90%／使用率 98%／溫度 85°C／功耗 95%上限，任一項超過紅線會跳警示條+聲音提醒；75-90%區間視為「快臨界」預警。所有百分比即時計算，自動依這台電腦GPU自己的容量/功耗上限換算，換別台電腦/別張顯卡一樣適用。",
+    sectionTitle: "佔用VRAM排行(即時更新，每2秒)",
+    legB: "藍框＝正常監控中(VRAM佔比低，安全)",
+    legG: "金框＝次要留意(VRAM佔比10-25%)",
+    legR: "紅框＝主要嫌疑(VRAM佔比≥25%，最可能是卡機元兇)",
+    suspectBadge: (p) => "主要嫌疑 " + p + "%",
+    procSub: (pid, mb, pct) => "PID " + pid + " · " + mb + " MB VRAM · GPU使用率 " + pct + "%",
+    killBtn: "結束程式",
+    killConfirm: (name, pid) => "確定要結束「" + name + "」(PID " + pid + ")嗎？",
+    alertCritPrefix: "🔴 已超過紅線：", alertCritSuffix: " — 建議立即檢查佔用程式並考慮結束",
+    alertWarnPrefix: "🟡 快臨界預警：", alertWarnSuffix: " — 留意中，尚未到紅線",
+    noNvidia: "⚠ 這台電腦偵測不到 nvidia-smi，本工具目前僅支援 NVIDIA GeForce/Quadro 顯卡（AMD/Intel顯卡尚未支援）。",
+    connErr: "⚠ 無法連線後端(gpu_guard_server.py是否已啟動?)",
+    killFail: "⚠ 結束程式失敗",
+    labelVram: "VRAM ", labelUtil: "使用率 ", labelTemp: "溫度 ", labelPower: "功耗 ",
+    procDesc: {
+      "dwm": "Windows桌面特效管理員(系統核心，勿隨意結束)",
+      "explorer": "Windows檔案總管/桌面殼層(系統核心，勿隨意結束)",
+      "csrss": "Windows系統子程序(系統核心，本工具禁止結束)",
+      "chrome": "Google Chrome瀏覽器",
+      "msedge": "Microsoft Edge瀏覽器",
+      "msedgewebview2": "Edge內嵌網頁元件(常見於其他App內建的網頁畫面)",
+      "pythonw": "Python背景程式(常見於ComfyUI/本地AI繪圖或推論工具，最常是VRAM大戶)",
+      "python": "Python程式",
+      "battle.net": "暴雪戰網遊戲平台",
+      "codex": "OpenAI Codex 桌面應用",
+      "claude": "Claude 桌面應用",
+      "doubao": "豆包(字節跳動AI助理)桌面應用",
+      "line": "LINE 通訊軟體",
+      "linecall": "LINE 通話元件",
+      "photos": "Windows 相片檢視器",
+      "nvidia overlay": "NVIDIA App 內建疊加介面(遊戲內效能/錄影功能)",
+      "shellexperiencehost": "Windows 系統殼層元件",
+      "searchhost": "Windows 搜尋功能元件",
+      "startmenuexperiencehost": "Windows 開始選單元件",
+      "textinputhost": "Windows 輸入法/文字輸入元件",
+      "edgegameassist": "Edge 瀏覽器遊戲助理疊加",
+      "qqliveservice": "QQ直播/影音背景服務",
+      "_default": "一般應用程式(未收錄說明，可依名稱自行判斷是否要結束)",
+    },
+  },
+  en: {
+    subtitle: "Real-time GPU overload monitor ‧ one-click VRAM release ‧ no reboot needed",
+    vram: "VRAM", util: "Utilization", power: "Power",
+    temp: "Temp (redline 85°C)", clock: "Core Clock", fan: "Fan", procCount: "Processes",
+    rlVram: "Redline 90% / Warn 75%", rlUtil: "Redline 98% / Warn 85%", rlPower: "Redline 95% / Warn 85%",
+    redlineNote: "Redline thresholds: VRAM 90% / Utilization 98% / Temp 85°C / Power 95% of limit. Crossing the redline shows an alert banner + sound; the 75%-redline range is a \"near-critical\" warning. All percentages are computed live against THIS GPU's own capacity/power limit, so it auto-adapts on any computer or GPU model.",
+    sectionTitle: "Top VRAM consumers (live, updates every 2s)",
+    legB: "Blue = normal, being monitored (low VRAM share, safe)",
+    legG: "Gold = worth watching (10-25% VRAM share)",
+    legR: "Red = prime suspect (≥25% VRAM share, most likely cause of freezes)",
+    suspectBadge: (p) => "Suspect " + p + "%",
+    procSub: (pid, mb, pct) => "PID " + pid + " · " + mb + " MB VRAM · GPU util " + pct + "%",
+    killBtn: "End Process",
+    killConfirm: (name, pid) => "End \"" + name + "\" (PID " + pid + ")?",
+    alertCritPrefix: "🔴 Redline exceeded: ", alertCritSuffix: " — check the process list and consider ending it",
+    alertWarnPrefix: "🟡 Near-critical: ", alertWarnSuffix: " — worth watching, not yet at redline",
+    noNvidia: "⚠ nvidia-smi not found on this machine. This tool currently only supports NVIDIA GeForce/Quadro GPUs (AMD/Intel not yet supported).",
+    connErr: "⚠ Can't reach the backend (is gpu_guard_server.py running?)",
+    killFail: "⚠ Failed to end process",
+    labelVram: "VRAM ", labelUtil: "Utilization ", labelTemp: "Temp ", labelPower: "Power ",
+    procDesc: {
+      "dwm": "Windows Desktop Window Manager (system-critical, do not end)",
+      "explorer": "Windows File Explorer / desktop shell (system-critical, do not end)",
+      "csrss": "Windows client/server runtime (system-critical, blocked in this tool)",
+      "chrome": "Google Chrome browser",
+      "msedge": "Microsoft Edge browser",
+      "msedgewebview2": "Edge WebView2 component (embedded web view used by other apps)",
+      "pythonw": "Background Python process (commonly ComfyUI / local AI image-gen or inference — usually the top VRAM hog)",
+      "python": "Python process",
+      "battle.net": "Blizzard Battle.net game launcher",
+      "codex": "OpenAI Codex desktop app",
+      "claude": "Claude desktop app",
+      "doubao": "Doubao (ByteDance AI assistant) desktop app",
+      "line": "LINE messenger",
+      "linecall": "LINE call component",
+      "photos": "Windows Photos viewer",
+      "nvidia overlay": "NVIDIA App in-game overlay (performance/recording)",
+      "shellexperiencehost": "Windows shell experience component",
+      "searchhost": "Windows Search component",
+      "startmenuexperiencehost": "Windows Start Menu component",
+      "textinputhost": "Windows text input/IME component",
+      "edgegameassist": "Edge browser Game Assist overlay",
+      "qqliveservice": "QQ Live streaming background service",
+      "_default": "Generic application (not in our list — use the name to judge whether it's safe to end)",
+    },
+  },
 };
+
 function describeProc(name){
-  return PROC_DESC[(name||"").toLowerCase()] || "一般應用程式(未收錄說明，可依名稱自行判斷是否要結束)";
+  const t = I18N[LANG];
+  return t.procDesc[(name||"").toLowerCase()] || t.procDesc._default;
+}
+
+function applyStaticText(){
+  const t = I18N[LANG];
+  document.getElementById("subtitle").textContent = t.subtitle;
+  document.getElementById("lblVram").textContent = t.vram;
+  document.getElementById("lblUtil").textContent = t.util;
+  document.getElementById("lblPower").textContent = t.power;
+  document.getElementById("lblTemp").textContent = t.temp;
+  document.getElementById("lblClock").textContent = t.clock;
+  document.getElementById("lblFan").textContent = t.fan;
+  document.getElementById("lblProcCount").textContent = t.procCount;
+  document.getElementById("rlVram").textContent = t.rlVram;
+  document.getElementById("rlUtil").textContent = t.rlUtil;
+  document.getElementById("rlPower").textContent = t.rlPower;
+  document.getElementById("redlineNote").textContent = t.redlineNote;
+  document.getElementById("sectionTitle").textContent = t.sectionTitle;
+  document.getElementById("legB").textContent = t.legB;
+  document.getElementById("legG").textContent = t.legG;
+  document.getElementById("legR").textContent = t.legR;
+  document.getElementById("langBtn").textContent = LANG === "zh" ? "EN" : "中文";
+  document.documentElement.lang = LANG === "zh" ? "zh-Hant" : "en";
+}
+function toggleLang(){
+  LANG = LANG === "zh" ? "en" : "zh";
+  localStorage.setItem("gg_lang", LANG);
+  applyStaticText();
+  refresh();
+}
+
+// ===== 顯卡顯示名稱設定(2026-07-04老闆指示：要寫品牌型號，nvidia-smi/驅動只回傳晶片代號不含AIB品牌，需手動配置覆蓋) =====
+const GPU_DISPLAY_NAME_OVERRIDE = "ASUS GeForce RTX 5060 Ti 16G"; // 沒有這張卡/想用自動偵測名稱可以把這行設成 null
+function resolveGpuDisplayName(rawName, memtotalMB){
+  if (GPU_DISPLAY_NAME_OVERRIDE) return GPU_DISPLAY_NAME_OVERRIDE;
+  const gb = Math.round(memtotalMB / 1024);
+  return (rawName || "GPU") + " " + gb + "G";
 }
 
 // ===== 紅線標準設定(2026-07-04老闆指示：設定紅線+快臨界提醒) =====
@@ -191,15 +319,16 @@ function fmtBar(el, pct, thr){
 function setRedlineMark(el, thr){ el.style.left = thr.crit + "%"; }
 
 function updateAlertBar(states){
+  const t = I18N[LANG];
   const bar = document.getElementById("alertBar");
   const crits = states.filter(s => s.level === "crit");
   const warns = states.filter(s => s.level === "warn");
   bar.classList.remove("show","crit");
   if(crits.length){
-    bar.textContent = "🔴 已超過紅線：" + crits.map(s=>s.label).join("、") + " — 建議立即檢查佔用程式並考慮結束";
+    bar.textContent = t.alertCritPrefix + crits.map(s=>s.label).join("、") + t.alertCritSuffix;
     bar.classList.add("show","crit");
   } else if(warns.length){
-    bar.textContent = "🟡 快臨界預警：" + warns.map(s=>s.label).join("、") + " — 留意中，尚未到紅線";
+    bar.textContent = t.alertWarnPrefix + warns.map(s=>s.label).join("、") + t.alertWarnSuffix;
     bar.classList.add("show");
   }
   const critKeys = new Set(crits.map(s=>s.key));
@@ -210,38 +339,41 @@ function updateAlertBar(states){
 }
 
 async function refresh(){
+  const t = I18N[LANG];
   try{
     const r = await fetch(API + "/stats");
     const d = await r.json();
     const states = [];
     if(d.gpu){
       const g = d.gpu;
-      document.getElementById("gpuName").textContent = g.name || "GPU";
+      document.getElementById("gpuName").textContent = resolveGpuDisplayName(g.name, g.memtotal);
       const vramPct = Math.round(g.memused / g.memtotal * 100);
-      document.getElementById("vramText").textContent = g.memused + " / " + g.memtotal + " MB (" + vramPct + "%)";
+      const usedGB = (g.memused / 1024).toFixed(1);
+      const totalGB = Math.round(g.memtotal / 1024);
+      document.getElementById("vramText").textContent = usedGB + " / " + totalGB + " GB (" + vramPct + "%)";
       fmtBar(document.getElementById("vramBar"), vramPct, REDLINE.vram);
       setRedlineMark(document.getElementById("vramRL"), REDLINE.vram);
-      if(vramPct>=REDLINE.vram.crit) states.push({key:"vram",level:"crit",label:"VRAM "+vramPct+"%"});
-      else if(vramPct>=REDLINE.vram.warn) states.push({key:"vram",level:"warn",label:"VRAM "+vramPct+"%"});
+      if(vramPct>=REDLINE.vram.crit) states.push({key:"vram",level:"crit",label:t.labelVram+vramPct+"%"});
+      else if(vramPct>=REDLINE.vram.warn) states.push({key:"vram",level:"warn",label:t.labelVram+vramPct+"%"});
 
       document.getElementById("utilText").textContent = g.util + "%";
       fmtBar(document.getElementById("utilBar"), g.util, REDLINE.util);
       setRedlineMark(document.getElementById("utilRL"), REDLINE.util);
-      if(g.util>=REDLINE.util.crit) states.push({key:"util",level:"crit",label:"使用率 "+g.util+"%"});
-      else if(g.util>=REDLINE.util.warn) states.push({key:"util",level:"warn",label:"使用率 "+g.util+"%"});
+      if(g.util>=REDLINE.util.crit) states.push({key:"util",level:"crit",label:t.labelUtil+g.util+"%"});
+      else if(g.util>=REDLINE.util.warn) states.push({key:"util",level:"warn",label:t.labelUtil+g.util+"%"});
 
       const powerPct = g.powerlimit ? Math.round(g.power / g.powerlimit * 100) : 0;
       document.getElementById("powerText").textContent = g.power.toFixed(1) + " / " + g.powerlimit.toFixed(0) + " W (" + powerPct + "%)";
       fmtBar(document.getElementById("powerBar"), powerPct, REDLINE.power);
       setRedlineMark(document.getElementById("powerRL"), REDLINE.power);
-      if(powerPct>=REDLINE.power.crit) states.push({key:"power",level:"crit",label:"功耗 "+powerPct+"%"});
-      else if(powerPct>=REDLINE.power.warn) states.push({key:"power",level:"warn",label:"功耗 "+powerPct+"%"});
+      if(powerPct>=REDLINE.power.crit) states.push({key:"power",level:"crit",label:t.labelPower+powerPct+"%"});
+      else if(powerPct>=REDLINE.power.warn) states.push({key:"power",level:"warn",label:t.labelPower+powerPct+"%"});
 
       document.getElementById("tempVal").textContent = g.temp + "°C";
       const tempStat = document.getElementById("tempStat");
       tempStat.classList.remove("warn","crit");
-      if(g.temp>=REDLINE.temp.crit){ tempStat.classList.add("crit"); states.push({key:"temp",level:"crit",label:"溫度 "+g.temp+"°C"}); }
-      else if(g.temp>=REDLINE.temp.warn){ tempStat.classList.add("warn"); states.push({key:"temp",level:"warn",label:"溫度 "+g.temp+"°C"}); }
+      if(g.temp>=REDLINE.temp.crit){ tempStat.classList.add("crit"); states.push({key:"temp",level:"crit",label:t.labelTemp+g.temp+"°C"}); }
+      else if(g.temp>=REDLINE.temp.warn){ tempStat.classList.add("warn"); states.push({key:"temp",level:"warn",label:t.labelTemp+g.temp+"°C"}); }
 
       document.getElementById("clockVal").textContent = g.clock + " MHz";
       document.getElementById("fanVal").textContent = (g.fan === null || g.fan === undefined) ? "N/A" : g.fan + "%";
@@ -254,37 +386,38 @@ async function refresh(){
       procs.forEach(function(p){
         const share = vramTotal ? (p.mb / vramTotal * 100) : 0;
         let cls = "", cc = "var(--cyan)", badge = "";
-        if(share >= 25){ cls = " suspect"; cc = "var(--rose)"; badge = '<span class="badge">主要嫌疑 ' + share.toFixed(0) + '%</span>'; }
+        if(share >= 25){ cls = " suspect"; cc = "var(--rose)"; badge = '<span class="badge">' + t.suspectBadge(share.toFixed(0)) + '</span>'; }
         else if(share >= 10){ cls = " warn2"; cc = "var(--gold)"; }
         const row = document.createElement("div");
         row.className = "item" + cls;
         row.style.setProperty("--cc", cc);
         row.innerHTML =
           '<div><div class="pName">' + p.name + badge + '</div>' +
-          '<div class="pSub">PID ' + p.pid + ' · ' + p.mb + ' MB VRAM · GPU使用率 ' + (p.gpuPct||0).toFixed(1) + '%</div>' +
+          '<div class="pSub">' + t.procSub(p.pid, p.mb, (p.gpuPct||0).toFixed(1)) + '</div>' +
           '<div class="pDesc">' + describeProc(p.name) + '</div></div>';
         const btn = document.createElement("button");
         btn.className = "killBtn";
-        btn.textContent = "結束程式";
+        btn.textContent = t.killBtn;
         btn.onclick = (function(pid,name){ return function(){ killProc(pid,name); }; })(p.pid, p.name);
         row.appendChild(btn);
         list.appendChild(row);
       });
     }
     updateAlertBar(states);
-    document.getElementById("ts").textContent = "更新 " + (d.ts || "--");
-        if(d.error === "NO_NVIDIA_SMI"){
-      document.getElementById("msg").textContent = "⚠ 這台電腦偵測不到 nvidia-smi，本工具目前僅支援 NVIDIA GeForce/Quadro 顯卡（AMD/Intel顯卡尚未支援）。";
+    document.getElementById("ts").textContent = (LANG==="zh"?"更新 ":"Updated ") + (d.ts || "--");
+    if(d.error === "NO_NVIDIA_SMI"){
+      document.getElementById("msg").textContent = t.noNvidia;
     } else {
       document.getElementById("msg").textContent = d.error ? ("⚠ " + d.error) : "";
     }
   }catch(e){
-    document.getElementById("msg").textContent = "⚠ 無法連線後端(gpu_guard_server.py是否已啟動?)";
+    document.getElementById("msg").textContent = t.connErr;
   }
 }
 
 async function killProc(pid, name){
-  if(!confirm("確定要結束「" + name + "」(PID " + pid + ")嗎？")) return;
+  const t = I18N[LANG];
+  if(!confirm(t.killConfirm(name, pid))) return;
   try{
     const r = await fetch(API + "/kill", {
       method: "POST", headers: {"Content-Type":"application/json"},
@@ -294,10 +427,11 @@ async function killProc(pid, name){
     document.getElementById("msg").textContent = (d.ok ? "✅ " : "❌ ") + d.msg;
     refresh();
   }catch(e){
-    document.getElementById("msg").textContent = "⚠ 結束程式失敗";
+    document.getElementById("msg").textContent = t.killFail;
   }
 }
 
+applyStaticText();
 refresh();
 setInterval(refresh, 2000);
 </script>
