@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<title>GPU Guard - GPU滿載監控</title>
+<style>
+  :root{
+    --bg:#0a121e; --panel:#111d30; --line:#22344a;
+    --cyan:#4fd6d0; --gold:#e8c468; --rose:#e2678a; --orange:#f0954a;
+    --text:#e9eef5; --dim:#7f93ab;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font-family:"Microsoft JhengHei","Noto Sans TC",sans-serif;font-size:17px;
+    padding:18px;min-width:360px;}
+  h1{font-size:20px;margin:0 0 14px;color:var(--gold);letter-spacing:1px;}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;
+    padding:16px;margin-bottom:14px;}
+  .row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-size:16px;}
+  .barTrack{background:#0e1826;border:1px solid var(--line);border-radius:8px;height:22px;
+    overflow:hidden;position:relative;}
+  .barFill{height:100%;transition:width .4s ease,background-color .4s ease;background:var(--cyan);}
+  .barFill.warn{background:var(--orange);}
+  .barFill.crit{background:var(--rose);animation:pulse 1s infinite alternate;}
+  @keyframes pulse{from{opacity:1;}to{opacity:.6;}}
+  .procRow{display:flex;justify-content:space-between;align-items:center;
+    padding:10px 4px;border-bottom:1px solid var(--line);font-size:16px;}
+  .procRow:last-child{border-bottom:none;}
+  .procName{font-weight:700;}
+  .procMB{color:var(--dim);margin-left:8px;}
+  .killBtn{background:var(--rose);color:#1a0810;border:none;border-radius:7px;
+    padding:7px 14px;font-size:15px;font-weight:700;cursor:pointer;}
+  .killBtn:hover{filter:brightness(1.15);}
+  .ts{color:var(--dim);font-size:13px;text-align:right;}
+  .msg{margin-top:8px;font-size:14px;color:var(--gold);min-height:18px;}
+  .big{font-size:22px;font-weight:900;}
+</style>
+</head>
+<body>
+  <h1>🖥 GPU Guard ─ GPU滿載監控與一鍵釋放</h1>
+
+  <div class="card">
+    <div class="row"><span id="gpuName">讀取中…</span><span class="big" id="gpuTemp">--°C</span></div>
+    <div class="row"><span>VRAM</span><span id="vramText">-- / -- MB</span></div>
+    <div class="barTrack"><div class="barFill" id="vramBar" style="width:0%"></div></div>
+    <div class="row" style="margin-top:12px"><span>使用率</span><span id="utilText">--%</span></div>
+    <div class="barTrack"><div class="barFill" id="utilBar" style="width:0%"></div></div>
+    <div class="ts" id="ts">--</div>
+  </div>
+
+  <div class="card">
+    <div class="row"><b>佔用VRAM最多的程式</b><span></span></div>
+    <div id="procList"></div>
+    <div class="msg" id="msg"></div>
+  </div>
+
+<script>
+const API = "http://localhost:8091";
+
+function fmtBar(el, pct){
+  el.style.width = Math.min(100, pct) + "%";
+  el.classList.remove("warn","crit");
+  if(pct >= 95) el.classList.add("crit");
+  else if(pct >= 85) el.classList.add("warn");
+}
+
+async function refresh(){
+  try{
+    const r = await fetch(API + "/stats");
+    const d = await r.json();
+    if(d.gpu){
+      document.getElementById("gpuName").textContent = d.gpu.name || "GPU";
+      document.getElementById("gpuTemp").textContent = d.gpu.temp + "°C";
+      const vramPct = Math.round(d.gpu.memused / d.gpu.memtotal * 100);
+      document.getElementById("vramText").textContent = d.gpu.memused + " / " + d.gpu.memtotal + " MB (" + vramPct + "%)";
+      fmtBar(document.getElementById("vramBar"), vramPct);
+      document.getElementById("utilText").textContent = d.gpu.util + "%";
+      fmtBar(document.getElementById("utilBar"), d.gpu.util);
+    }
+    document.getElementById("ts").textContent = "更新時間 " + (d.ts || "--");
+
+    const list = document.getElementById("procList");
+    list.innerHTML = "";
+    (d.processes || []).slice(0, 10).forEach(p => {
+      const row = document.createElement("div");
+      row.className = "procRow";
+      row.innerHTML = `<span><span class="procName">${p.name}</span><span class="procMB">PID ${p.pid} · ${p.mb} MB</span></span>`;
+      const btn = document.createElement("button");
+      btn.className = "killBtn";
+      btn.textContent = "結束此程式";
+      btn.onclick = () => killProc(p.pid, p.name);
+      row.appendChild(btn);
+      list.appendChild(row);
+    });
+
+    if(d.error){
+      document.getElementById("msg").textContent = "⚠ " + d.error;
+    }
+  }catch(e){
+    document.getElementById("msg").textContent = "⚠ 無法連線後端(gpu_guard_server.py是否已啟動?)";
+  }
+}
+
+async function killProc(pid, name){
+  if(!confirm(`確定要結束「${name}」(PID ${pid})嗎？`)) return;
+  try{
+    const r = await fetch(API + "/kill", {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({pid})
+    });
+    const d = await r.json();
+    document.getElementById("msg").textContent = (d.ok ? "✅ " : "❌ ") + d.msg;
+    refresh();
+  }catch(e){
+    document.getElementById("msg").textContent = "⚠ 結束程式失敗";
+  }
+}
+
+refresh();
+setInterval(refresh, 2000);
+</script>
+</body>
+</html>
